@@ -4,6 +4,7 @@ on:
   pull_request:
     branches:
       - dev
+      - master
   push:
     branches:
       - dev
@@ -25,7 +26,7 @@ jobs:
         uses: actions/setup-java@v2
         with:
           java-version: 8
-          distribution: "zulu"
+          distribution: "adopt"
 
       - name: Cache Gradle dependencies
         uses: actions/cache@v2
@@ -42,11 +43,14 @@ jobs:
         with:
           name: app
           path: app/build/outputs/apk/debug/*.apk
+
   test-android:
+    # macos has hardware acceleration. See android-emulator-runner action
     runs-on: macos-latest
     strategy:
       matrix:
-        api-level: [21, 29]
+        # api-level 19 is min sdk, but throws errors related to desugaring 
+        api-level: [ 21, 29 ]
     steps:
       - uses: actions/checkout@v2
 
@@ -54,7 +58,7 @@ jobs:
         uses: actions/setup-java@v2
         with:
           java-version: 8
-          distribution: "zulu"
+          distribution: "adopt"
 
       - name: Cache Gradle dependencies
         uses: actions/cache@v2
@@ -67,7 +71,10 @@ jobs:
         uses: reactivecircus/android-emulator-runner@v2
         with:
           api-level: ${{ matrix.api-level }}
+          # workaround to emulator bug: https://github.com/ReactiveCircus/android-emulator-runner/issues/160
+          emulator-build: 7425822
           script: ./gradlew connectedCheck
+
 #   sonar:
 #     runs-on: ubuntu-latest
 #     steps:
@@ -79,7 +86,7 @@ jobs:
 #         uses: actions/setup-java@v2
 #         with:
 #           java-version: 11 # Sonar requires JDK 11
-#           distribution: "zulu"
+#           distribution: "adopt"
 
 #       - name: Cache SonarCloud packages
 #         uses: actions/cache@v2
